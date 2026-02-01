@@ -4,6 +4,8 @@
 #include <map>
 #include <vector>
 #include <utility>
+#include <unordered_map>
+
 
 // --- Paramètres globaux ---
 constexpr int CELL_SIZE = 25;     // Taille d'une case
@@ -21,7 +23,7 @@ struct Case
 
 // On utilise une clé grille (x, y) entière
 using Coords = std::pair<int, int>;
-std::map<Coords, Case> mapGrille;
+std::unordered_map<Coords, Case> mapGrille;
 
 // pré-déclarations de mes fonctions
 std::vector<Coords> getVoisins(Coords c);
@@ -179,7 +181,7 @@ void verifVoisins(float dt)
         for (auto const &voisins : getVoisins(key))
         {
             // auto it = mapGrille.find(voisins);
-            auto it = mapGrille.lower_bound(voisins);
+            auto it = mapGrille.find(voisins);
             if (it != mapGrille.end()/* .end donne l'élément aprés le dernier de la liste donc la fin de la lsite*/ && it->second.EstActiver) // si le voisin est activer cela ajoute 1 au nbr de voisin. second = la 2éme valeur dans le duo qui cosntiture un entre de map donc valeur plutot que item
                 nbrVoisin++;
         }
