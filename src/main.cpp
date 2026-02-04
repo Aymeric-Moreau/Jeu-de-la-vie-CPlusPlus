@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 #include <utility>
-#include <unordered_map>
+// #include <unordered_map>
 
 
 // --- Paramètres globaux ---
@@ -23,7 +23,7 @@ struct Case
 
 // On utilise une clé grille (x, y) entière
 using Coords = std::pair<int, int>;
-std::unordered_map<Coords, Case> mapGrille;
+std::map<Coords, Case> mapGrille;
 
 // pré-déclarations de mes fonctions
 std::vector<Coords> getVoisins(Coords c);
@@ -169,11 +169,12 @@ std::vector<Coords> getVoisins(Coords c)
     };
 }
 
-std::map<Coords, int> nouveauxVoisins; /// pour chauq co on a un int
-int nbrVoisin = 0;
 
+int nbrVoisin = 0;
+    std::map<Coords, int> nouveauxVoisins; /// pour chauq co on a un int
 void verifVoisins(float dt)
 {
+
     // Comptage des voisins
     for (auto const &[key, val] : mapGrille) // le & veut dire que tu accéde directement a la valeur sans faire de copie ( si tu le met pas sa fais un copie )
     {
