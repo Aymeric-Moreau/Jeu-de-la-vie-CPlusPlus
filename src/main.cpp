@@ -10,8 +10,8 @@
 // --- Paramètres globaux ---
 constexpr int CELL_SIZE = 25;   // Taille d'une case
 constexpr int CELL_SPACING = 1; // Espace entre les cases
-constexpr int CELL_NUMBER_HORIZONTAL = 75 * 2;
-constexpr int CELL_NUMBER_VERTICAL = 45 * 2;
+constexpr int CELL_NUMBER_HORIZONTAL = 75 * 16; // dabors sans multiplicateur puis 2 puis quand 2 valide alors 4 ensuite 8 et 16
+constexpr int CELL_NUMBER_VERTICAL = 45 * 16;
 using Coords = std::pair<int, int>;
 // struct perso pour les infos de chaque Case de la grille
 struct Case
@@ -24,7 +24,7 @@ struct Case
 
 // On utilise une clé grille (x, y) entière
 
-std::map<Coords, Case> mapGrille;
+// std::map<Coords, Case> mapGrille;
 std::array<Case, CELL_NUMBER_HORIZONTAL * CELL_NUMBER_VERTICAL> grille;
 
 // pré-déclarations de mes fonctions
@@ -56,14 +56,12 @@ int main()
                                             0};
             ActualIndexArray++;
 
-            // mapGrille[{gx, gy}] = Case{{gx, gy},
-            //                            {(float)gx * (CELL_SIZE + CELL_SPACING), (float)gy * (CELL_SIZE + CELL_SPACING)},
-            //                            false,
-            //                            0};
+
         }
     }
     // Variables de gestion du OnTick : permettent d’exécuter du code à intervalle régulier
     float timer = 0.0f;
+    float timer2 = 0.0f;
     constexpr float interval = 1.0f;
     float showTextTimer = 0.0f; // Compteur pour l’affichage temporaire de texte
     bool timerActive{true};
@@ -115,28 +113,35 @@ int main()
         camera.target = ballPosition;
         camera.offset = {(float)screenWidth / 2, (float)screenHeight / 2};
 
-        BeginDrawing();
-        ClearBackground(background);
-
-        BeginMode2D(camera); // ----- Caméra activée -----
-
+        
+        timer2 += dt;
         // Dessin de la grille
-        for (auto &val : grille)
-        {
-            DrawRectangle(val.Coordoner.x, val.Coordoner.y,
-                          CELL_SIZE, CELL_SIZE,
-                          val.EstActiver ? BLACK : WHITE);
-        }
-
-        // Dessin de la grille
-        // for (auto &[key, val] : mapGrille)
+        // for (auto &val : grille)
         // {
         //     DrawRectangle(val.Coordoner.x, val.Coordoner.y,
         //                   CELL_SIZE, CELL_SIZE,
         //                   val.EstActiver ? BLACK : WHITE);
         // }
 
+        if (timer2 >= 1.0f / 30.0f )
+        {
+            BeginDrawing();
+        ClearBackground(background);
+
+        BeginMode2D(camera); // ----- Caméra activée -----
+            timer2 = 0.0f;
+            for (auto &val : grille)
+        {
+            DrawRectangle(val.Coordoner.x, val.Coordoner.y,
+                          CELL_SIZE, CELL_SIZE,
+                          val.EstActiver ? BLACK : WHITE);
+        }
         EndMode2D(); // ----- Caméra désactivée -----
+        }
+
+
+
+        
 
         // Clic souris
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
@@ -146,30 +151,16 @@ int main()
             Coords caseToucher = FindCaseWithCoo(mousePos);
 
             // trouve la case toucher par le clique de la souris puis update sa valeur
-            // auto it = mapGrille.find(caseToucher);
-            // Case c = grille[caseToucher.second * CELL_NUMBER_HORIZONTAL + caseToucher.first];
+            
             int index = caseToucher.second * CELL_NUMBER_HORIZONTAL + caseToucher.first;
-            //int index = caseToucher.first * CELL_NUMBER_VERTICAL + caseToucher.second;
+            
 
             if (index >= 0 && index < grille.size())
             {
                 grille[index].EstActiver = !grille[index].EstActiver;
-                int c = index;
-                std::cout
-                << " click sur : " << " " << c << " "
-    << c + 1 << " "
-    << c - 1 << " "
-    << c + CELL_NUMBER_HORIZONTAL << " "
-    << c + CELL_NUMBER_HORIZONTAL + 1 << " "
-    << c + CELL_NUMBER_HORIZONTAL - 1 << " "
-    << c - CELL_NUMBER_HORIZONTAL << " "
-    << c - CELL_NUMBER_HORIZONTAL + 1 << " "
-    << c - CELL_NUMBER_HORIZONTAL - 1
-    << "\n";
             }
-            // if (it != mapGrille.end()){
-            //     it->second.EstActiver = !it->second.EstActiver;
-            // }
+                
+
         }
 
         // affiche text d'information pour l'interaction avec le boucle d'éxécution des rêgle
@@ -191,37 +182,25 @@ Coords FindCaseWithCoo(Vector2 mousePos)
     return {caseX, caseY};
 }
 
-// Voisins en coordonnées grille
-// std::vector<Coords> getVoisins(Coords c)
-// {
-//     return {
-//         {c.first, c.second - 1},
-//         {c.first + 1, c.second - 1},
-//         {c.first + 1, c.second},
-//         {c.first + 1, c.second + 1},
-//         {c.first, c.second + 1},
-//         {c.first - 1, c.second + 1},
-//         {c.first - 1, c.second},
-//         {c.first - 1, c.second - 1}};
-// }
 
-std::vector<int> getVoisins(int c)
+std::array<int,8> voisins;
+std::array<int,8> getVoisins(int c)
 {
-    
-    return {
-        {c + 1},
-        {c - 1},
-        {c + CELL_NUMBER_HORIZONTAL},
-        {c + CELL_NUMBER_HORIZONTAL + 1},
-        {c + CELL_NUMBER_HORIZONTAL -1},
-        {c - CELL_NUMBER_HORIZONTAL},
-        {c - CELL_NUMBER_HORIZONTAL + 1},
-        {c - CELL_NUMBER_HORIZONTAL -1}};
+    voisins = {
+        c + 1,
+        c - 1,
+        c + CELL_NUMBER_HORIZONTAL,
+        c + CELL_NUMBER_HORIZONTAL + 1,
+        c + CELL_NUMBER_HORIZONTAL -1,
+        c - CELL_NUMBER_HORIZONTAL,
+        c - CELL_NUMBER_HORIZONTAL + 1,
+        c - CELL_NUMBER_HORIZONTAL -1};
+    return voisins;
 }
 
 int nbrVoisin = 0;
-std::map<Coords, int> nouveauxVoisins; /// pour chauq co on a un int
-std::map<int, int> nouveauxNbrVoisins; /// pour chauq index  on a un int --- A voir si je peux pas le passer en un array
+
+std::array<int, CELL_NUMBER_HORIZONTAL * CELL_NUMBER_VERTICAL > nouveauxNbrVoisins; /// pour chauq index  on a un int --- A voir si je peux pas le passer en un array
 void verifVoisins(float dt)
 {
 
@@ -253,33 +232,9 @@ void verifVoisins(float dt)
             grille[i].EstActiver = false;
     }
     
-
-
-
-    // Comptage des voisins
-    // for (auto const &[key, val] : mapGrille) // le & veut dire que tu accéde directement a la valeur sans faire de copie ( si tu le met pas sa fais un copie )
-    // {
-    //     nbrVoisin = 0;
-    //     for (auto const &voisins : getVoisins(key))
-    //     {
-    //         // auto it = mapGrille.find(voisins);
-    //         auto it = mapGrille.find(voisins);
-    //         if (it != mapGrille.end() /* .end donne l'élément aprés le dernier de la liste donc la fin de la lsite*/ && it->second.EstActiver) // si le voisin est activer cela ajoute 1 au nbr de voisin. second = la 2éme valeur dans le duo qui cosntiture un entre de map donc valeur plutot que item
-    //             nbrVoisin++;
-    //     }
-    //     nouveauxVoisins[key] = nbrVoisin;
-    // }
-    //  Mise à jour des cases
-    // for (auto &[key, val] : mapGrille)
-    // {
-    //     val.nombreVoisin = nouveauxVoisins[key];
-    //     if (val.nombreVoisin == 3)
-    //         val.EstActiver = true;
-    //     else if (val.EstActiver && val.nombreVoisin == 2)
-    //         val.EstActiver = true;
-    //     else
-    //         val.EstActiver = false;
-    // }
 }
 
 // note profilleur : premiére ereur fais de linitiation de variable dans verif voisin ensuite c'est find dans la map qui est un peu long
+// une fois la map corriger on passe en x4 et la map nouveauxNbrVoisins prend trop de temp
+// aprés la map nouveauxNbrVoisins j'ai opti get voisin pour pas que sa allocator un vector a chaque fois je l'ai passer sous array avec instanciation avant
+// avec un fois 8 on est a 30 fps alors que avec le x 2 on est a 60 on sent que c'est lent mais il y a pas de ralentissement et verifvoisin fais 0.08
