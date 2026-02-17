@@ -7,6 +7,7 @@
 #include <array>
 
 #include <algorithm>
+#include <unordered_set>
 
 
 // --- Paramètres globaux ---
@@ -36,6 +37,7 @@ Vector2 bottomLeftWorld;
 Vector2 bottomRightWorld;
 std::vector<Case> caseVisible;
 std::vector<int> caseAVerif;
+std::unordered_set<int> caseAverifier;
 
 // On utilise une clé grille (x, y) entière
 
@@ -228,28 +230,7 @@ void UpdateViewportCoord()
     bottomRightWorld = GetScreenToWorld2D((Vector2){screenWidth, screenHeight}, camera);
 }
 
-// std::vector<Case> GetAllCaseBetweenMinMaxCo(Vector2 CoMin, Vector2 CoMax){
-//         caseVisible.clear();
-// // si on a un tableau de 200 de largeur et de 100 de hauteur et un écran de 20 de largeur et de 15 de hauteur
-// // si le haut a gauche et est 26 le haut droite et a 46
-// // le bas est alors a 3026 et 3046
 
-// int indexUpleft;
-// int indexDownleft;
-// int indexUpRight;
-// int intervalLeftRight = indexUpRight - indexUpleft;
-// for (int i = indexUpleft; i < indexDownleft; i += CELL_NUMBER_HORIZONTAL)
-// {
-//     int firstCellInRow = i;
-//     for (int i = firstCellInRow; i < firstCellInRow + intervalLeftRight; i++)
-//     {
-//         /* code */
-//     }
-
-// }
-
-// }
-//
 std::vector<Case> GetAllCaseBetweenMinMaxCo(Vector2 CoMin, Vector2 CoMax)
 {
     caseVisible.clear();
@@ -349,7 +330,7 @@ void AjouterAuCaseAVerif(int c){
 
 int nbrVoisin = 0;
 
-std::array<int, CELL_NUMBER_HORIZONTAL * CELL_NUMBER_VERTICAL> nouveauxNbrVoisins; /// pour chauq index  on a un int --- A voir si je peux pas le passer en un array
+std::array<int, CELL_NUMBER_HORIZONTAL * CELL_NUMBER_VERTICAL> nouveauxNbrVoisins; 
 void verifVoisins(float dt)
 {
 
@@ -387,42 +368,42 @@ void verifVoisins(float dt)
     }
 }
 
-void verifVoisinsOld(float dt)
-{
+// void verifVoisinsOld(float dt)
+// {
 
-    for (size_t i = 0; i < grille.size(); i++)
-    {
-        nbrVoisin = 0;
-        for (auto const &voisins : getVoisins(i))
-        {
+//     for (size_t i = 0; i < grille.size(); i++)
+//     {
+//         nbrVoisin = 0;
+//         for (auto const &voisins : getVoisins(i))
+//         {
 
-            if (voisins >= 0 && voisins < grille.size())
-            {
-                if (grille[voisins].EstActiver) // si le voisin est activer cela ajoute 1 au nbr de voisin.
-                    nbrVoisin++;
-            }
-        }
-        nouveauxNbrVoisins[i] = nbrVoisin;
-    }
+//             if (voisins >= 0 && voisins < grille.size())
+//             {
+//                 if (grille[voisins].EstActiver) // si le voisin est activer cela ajoute 1 au nbr de voisin.
+//                     nbrVoisin++;
+//             }
+//         }
+//         nouveauxNbrVoisins[i] = nbrVoisin;
+//     }
 
-    for (size_t i = 0; i < grille.size(); i++)
-    {
+//     for (size_t i = 0; i < grille.size(); i++)
+//     {
 
-        grille[i].nombreVoisin = nouveauxNbrVoisins[i];
-        // if (grille[i].nombreVoisin == 3)
-        //     grille[i].EstActiver = true;
-        // else if (grille[i].EstActiver && grille[i].nombreVoisin == 2)
-        //     grille[i].EstActiver = true;
-        // else
-        //     grille[i].EstActiver = false;
-                if (grille[i].nombreVoisin == 3)
-            ActiverCase(i);
-        else if (grille[i].EstActiver && grille[i].nombreVoisin == 2)
-            ActiverCase(i);
-        else
-            DesactiverCase(i);
-    }
-}
+//         grille[i].nombreVoisin = nouveauxNbrVoisins[i];
+//         // if (grille[i].nombreVoisin == 3)
+//         //     grille[i].EstActiver = true;
+//         // else if (grille[i].EstActiver && grille[i].nombreVoisin == 2)
+//         //     grille[i].EstActiver = true;
+//         // else
+//         //     grille[i].EstActiver = false;
+//                 if (grille[i].nombreVoisin == 3)
+//             ActiverCase(i);
+//         else if (grille[i].EstActiver && grille[i].nombreVoisin == 2)
+//             ActiverCase(i);
+//         else
+//             DesactiverCase(i);
+//     }
+// }
 
 // note profilleur : premiére ereur fais de linitiation de variable dans verif voisin ensuite c'est find dans la map qui est un peu long
 // une fois la map corriger on passe en x4 et la map nouveauxNbrVoisins prend trop de temp
