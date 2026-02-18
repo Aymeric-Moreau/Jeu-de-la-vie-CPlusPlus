@@ -18,7 +18,9 @@ constexpr int CELL_NUMBER_VERTICAL = 45 * 128;
 constexpr Color BACKGROUND = BLUE; //
 constexpr int SCREENWIDTH = 1540;
 constexpr int SCREENHEIGHT = 990;
+
 using Coords = std::pair<int, int>;
+
 // struct perso pour les infos de chaque Case de la grille
 struct Case
 {
@@ -28,13 +30,14 @@ struct Case
     int nombreVoisin{0};
 };
 
-
+// coordonée de chaque coin de l'écran
 Vector2 topLeftWorld;
 Vector2 topRightWorld;
 Vector2 bottomLeftWorld;
 Vector2 bottomRightWorld;
+
+// Variable servant a faire l'affichage et les vérification dynamique
 std::vector<Case> caseVisible;
-std::vector<int> caseAVerif;
 std::unordered_set<int> caseAverifier;
 std::unordered_set<int> caseActiver;
 
@@ -45,15 +48,17 @@ std::array<Case, CELL_NUMBER_HORIZONTAL * CELL_NUMBER_VERTICAL> grille;
 // pré-déclarations de mes fonctions
 void UpdateViewportCoord();
 std::vector<Case> GetAllCaseBetweenMinMaxCo(Vector2 CoMin, Vector2 CoMax);
-std::vector<Coords> getVoisins(Coords c);
+std::vector<Coords> GetVoisins(Coords c);
 int FindCaseWithCoo(Vector2 mousePos);
 void ActiverCase(int index);
-void verifVoisins(float dt);
+void VerifVoisins(float dt);
 void DesactiverCase(int index);
 void ActiverCase(int index);
 void AjouterAuCaseAVerif(int c);
 void SupprimerAuCaseAVerif(int c);
 void ConstructionCaseAVerif();
+
+
 Camera2D camera;
 
 int main()
@@ -63,6 +68,7 @@ int main()
     SetTargetFPS(60);
 
     int ActualIndexArray = 0;
+
     // Initialisation de la grille
     for (int gy = 0; gy < CELL_NUMBER_VERTICAL; gy++)
     {
@@ -133,7 +139,7 @@ int main()
         if (timer >= interval && timerActive)
         {
             timer = 0.0f;
-            verifVoisins(dt);
+            VerifVoisins(dt);
             showTextTimer = 1.0f;
         }
 
@@ -250,7 +256,7 @@ std::vector<Case> GetAllCaseBetweenMinMaxCo(Vector2 CoMin, Vector2 CoMax)
 
 
 std::array<int, 8> voisins;
-std::array<int, 8> getVoisins(int c)
+std::array<int, 8> GetVoisins(int c)
 {
     voisins = {
         c + 1,
@@ -272,17 +278,17 @@ void ActiverCase(int index)
     {
         grille[index].EstActiver = true;
         AjouterAuCaseAVerif(index);
-        voisinCaseActiver = getVoisins(index);
-        for (int i = 0; i < voisinCaseActiver.size(); i++)
-        {
-            AjouterAuCaseAVerif(voisinCaseActiver[i]);
-            voisinCaseActiverVoisin = getVoisins(voisinCaseActiver[i]);
-            for (int y = 0; y < voisinCaseActiverVoisin.size(); y++)
-        {
-            AjouterAuCaseAVerif(voisinCaseActiverVoisin[y]);
-        }
+        // voisinCaseActiver = GetVoisins(index);
+        // for (int i = 0; i < voisinCaseActiver.size(); i++)
+        // {
+        //     AjouterAuCaseAVerif(voisinCaseActiver[i]);
+        //     voisinCaseActiverVoisin = GetVoisins(voisinCaseActiver[i]);
+        //     for (int y = 0; y < voisinCaseActiverVoisin.size(); y++)
+        // {
+        //     AjouterAuCaseAVerif(voisinCaseActiverVoisin[y]);
+        // }
 
-        }
+        // }
         
     }
 }
@@ -311,7 +317,7 @@ void ConstructionCaseAVerif(){
     caseAverifier = caseActiver;
     for (auto &&i : caseActiver)
     {
-        for (auto &&i : getVoisins(i))
+        for (auto &&i : GetVoisins(i))
         {
             caseAverifier.insert(i);
         }
@@ -324,13 +330,13 @@ void ConstructionCaseAVerif(){
 int nbrVoisin = 0;
 
 std::array<int, CELL_NUMBER_HORIZONTAL * CELL_NUMBER_VERTICAL> nouveauxNbrVoisins; 
-void verifVoisins(float dt)
+void VerifVoisins(float dt)
 {
     ConstructionCaseAVerif();
 for (auto &&i : caseAverifier)
 {
      nbrVoisin = 0;
-        for (auto const &voisins : getVoisins(i))
+        for (auto const &voisins : GetVoisins(i))
         {
 
             if (voisins >= 0 && voisins < grille.size())
