@@ -9,10 +9,9 @@
 #include <algorithm>
 #include <unordered_set>
 
-
 // --- Paramètres globaux ---
-constexpr int CELL_SIZE = 10;                   // Taille d'une case
-constexpr int CELL_SPACING = 1;                 // Espace entre les cases
+constexpr int CELL_SIZE = 10;                    // Taille d'une Cell
+constexpr int CELL_SPACING = 1;                  // Espace entre les cases
 constexpr int CELL_NUMBER_HORIZONTAL = 75 * 128; // dabors sans multiplicateur puis 2 puis quand 2 valide alors 4 ensuite 8 et 16 puis 32 pui 64 puis 128 puis 256
 constexpr int CELL_NUMBER_VERTICAL = 45 * 128;
 constexpr Color BACKGROUND = BLUE; //
@@ -21,13 +20,13 @@ constexpr int SCREENHEIGHT = 990;
 
 using Coords = std::pair<int, int>;
 
-// struct perso pour les infos de chaque Case de la grille
-struct Case
+// struct perso pour les infos de chaque Cell de la grid
+struct Cell
 {
     Coords index;
-    Vector2 Coordoner; // Coordonnées en pixels
-    bool EstActiver{false};
-    int nombreVoisin{0};
+    Vector2 coordinates; // Coordonnées en pixels coordinates
+    bool isActivate{false};
+    int numberOfNeighbours{0};
 };
 
 // coordonée de chaque coin de l'écran
@@ -37,27 +36,25 @@ Vector2 bottomLeftWorld;
 Vector2 bottomRightWorld;
 
 // Variable servant a faire l'affichage et les vérification dynamique
-std::vector<Case> caseVisible;
-std::unordered_set<int> caseAverifier;
-std::unordered_set<int> caseActiver;
+std::vector<Cell> cellVisible;
+std::unordered_set<int> cellToCheck;
+std::unordered_set<int> cellActivate;
 
-
-// array stockant la grille compléte
-std::array<Case, CELL_NUMBER_HORIZONTAL * CELL_NUMBER_VERTICAL> grille;
+// array stockant la grid compléte
+std::array<Cell, CELL_NUMBER_HORIZONTAL * CELL_NUMBER_VERTICAL> grid;
 
 // pré-déclarations de mes fonctions
 void UpdateViewportCoord();
-std::vector<Case> GetAllCaseBetweenMinMaxCo(Vector2 CoMin, Vector2 CoMax);
+void GetAllCellBetweenMinMaxCo(Vector2 CoMin, Vector2 CoMax);
 std::vector<Coords> GetVoisins(Coords c);
 int FindCaseWithCoo(Vector2 mousePos);
-void ActiverCase(int index);
-void VerifVoisins(float dt);
-void DesactiverCase(int index);
-void ActiverCase(int index);
-void AjouterAuCaseAVerif(int c);
-void SupprimerAuCaseAVerif(int c);
-void ConstructionCaseAVerif();
-
+void ActivateCell(int index);
+void CheckNeighbours(float dt);
+void DeactivateCell(int index);
+// void ActivateCell(int index);
+void AddToActivateCellArray(int c);
+void RemoveFromActivateCellArray(int c);
+void BuildCheckedCellArray();
 
 Camera2D camera;
 
@@ -69,13 +66,13 @@ int main()
 
     int ActualIndexArray = 0;
 
-    // Initialisation de la grille
+    // Initialisation de la grid
     for (int gy = 0; gy < CELL_NUMBER_VERTICAL; gy++)
     {
         for (int gx = 0; gx < CELL_NUMBER_HORIZONTAL; gx++)
         {
 
-            grille[ActualIndexArray] = Case{{gx, gy},
+            grid[ActualIndexArray] = Cell{{gx, gy},
                                             {(float)gx * (CELL_SIZE + CELL_SPACING), (float)gy * (CELL_SIZE + CELL_SPACING)},
                                             false,
                                             0};
@@ -139,7 +136,7 @@ int main()
         if (timer >= interval && timerActive)
         {
             timer = 0.0f;
-            VerifVoisins(dt);
+            CheckNeighbours(dt);
             showTextTimer = 1.0f;
         }
 
@@ -151,20 +148,18 @@ int main()
         camera.offset = {(float)SCREENWIDTH / 2, (float)SCREENHEIGHT / 2};
 
         UpdateViewportCoord();
-        GetAllCaseBetweenMinMaxCo(topLeftWorld, bottomRightWorld);
-
-
+        GetAllCellBetweenMinMaxCo(topLeftWorld, bottomRightWorld);
 
         BeginDrawing();
         ClearBackground(BACKGROUND);
 
         BeginMode2D(camera); // ----- Caméra activée -----
 
-        for (auto &val : caseVisible)
+        for (auto &val : cellVisible)
         {
-            DrawRectangle(val.Coordoner.x, val.Coordoner.y,
+            DrawRectangle(val.coordinates.x, val.coordinates.y,
                           CELL_SIZE, CELL_SIZE,
-                          val.EstActiver ? BLACK : WHITE);
+                          val.isActivate ? BLACK : WHITE);
         }
         EndMode2D(); // ----- Caméra désactivée -----
 
@@ -176,22 +171,21 @@ int main()
             Vector2 mousePos = GetScreenToWorld2D(GetMousePosition(), camera);
             // Coords caseToucher = FindCaseWithCoo(mousePos);
 
-            // trouve la case toucher par le clique de la souris puis update sa valeur
+            // trouve la Cell toucher par le clique de la souris puis update sa valeur
 
             int index = FindCaseWithCoo(mousePos);
 
-            if (index >= 0 && index < grille.size())
+            if (index >= 0 && index < grid.size())
             {
-                
-                if (grille[index].EstActiver)
+
+                if (grid[index].isActivate)
                 {
-                    DesactiverCase(index);
+                    DeactivateCell(index);
                 }
                 else
                 {
-                    ActiverCase(index);
+                    ActivateCell(index);
                 }
-                
             }
         }
 
@@ -206,7 +200,7 @@ int main()
     return 0;
 }
 
-// Conversion coord. pixels -> indices de grille
+// Conversion coord. pixels -> indices de grid
 int FindCaseWithCoo(Vector2 mousePos)
 {
     int caseX = (int)floor(mousePos.x / (CELL_SIZE + CELL_SPACING));
@@ -223,12 +217,11 @@ void UpdateViewportCoord()
     bottomRightWorld = GetScreenToWorld2D((Vector2){SCREENWIDTH, SCREENHEIGHT}, camera);
 }
 
-
-std::vector<Case> GetAllCaseBetweenMinMaxCo(Vector2 CoMin, Vector2 CoMax)
+void GetAllCellBetweenMinMaxCo(Vector2 CoMin, Vector2 CoMax)
 {
-    caseVisible.clear();
+    cellVisible.clear();
 
-    // Convertir pixels monde -> coordonnées grille
+    // Convertir pixels monde -> coordonnées grid
     int minX = (int)floor(CoMin.x / (CELL_SIZE + CELL_SPACING));
     int minY = (int)floor(CoMin.y / (CELL_SIZE + CELL_SPACING));
 
@@ -247,13 +240,10 @@ std::vector<Case> GetAllCaseBetweenMinMaxCo(Vector2 CoMin, Vector2 CoMax)
         for (int x = minX; x <= maxX; x++)
         {
             int index = x + y * CELL_NUMBER_HORIZONTAL;
-            caseVisible.push_back(grille[index]);
+            cellVisible.push_back(grid[index]);
         }
     }
-
-    return caseVisible;
 }
-
 
 std::array<int, 8> voisins;
 std::array<int, 8> GetVoisins(int c)
@@ -271,109 +261,103 @@ std::array<int, 8> GetVoisins(int c)
 }
 std::array<int, 8> voisinCaseActiver;
 std::array<int, 8> voisinCaseActiverVoisin;
-void ActiverCase(int index)
+void ActivateCell(int index)
 {
 
-    if (index >= 0 && index < grille.size())
+    if (index >= 0 && index < grid.size())
     {
-        grille[index].EstActiver = true;
-        AjouterAuCaseAVerif(index);
+        grid[index].isActivate = true;
+        AddToActivateCellArray(index);
         // voisinCaseActiver = GetVoisins(index);
         // for (int i = 0; i < voisinCaseActiver.size(); i++)
         // {
-        //     AjouterAuCaseAVerif(voisinCaseActiver[i]);
+        //     AddToActivateCellArray(voisinCaseActiver[i]);
         //     voisinCaseActiverVoisin = GetVoisins(voisinCaseActiver[i]);
         //     for (int y = 0; y < voisinCaseActiverVoisin.size(); y++)
         // {
-        //     AjouterAuCaseAVerif(voisinCaseActiverVoisin[y]);
+        //     AddToActivateCellArray(voisinCaseActiverVoisin[y]);
         // }
 
         // }
-        
     }
 }
 
-void DesactiverCase(int index)
+void DeactivateCell(int index)
 {
 
-    if (index >= 0 && index < grille.size())
+    if (index >= 0 && index < grid.size())
     {
-        grille[index].EstActiver = false;
-        SupprimerAuCaseAVerif(index);
+        grid[index].isActivate = false;
+        RemoveFromActivateCellArray(index);
     }
 }
-// caseAverifier
-void AjouterAuCaseAVerif(int c){
+// cellToCheck
+void AddToActivateCellArray(int c)
+{
 
-    caseActiver.insert(c);
-
+    cellActivate.insert(c);
 }
 
-void SupprimerAuCaseAVerif(int c){
-    caseActiver.erase(c);
+void RemoveFromActivateCellArray(int c)
+{
+    cellActivate.erase(c);
 }
 
-void ConstructionCaseAVerif(){
-    caseAverifier = caseActiver;
-    for (auto &&i : caseActiver)
+void BuildCheckedCellArray()
+{
+    cellToCheck = cellActivate;
+    for (auto &&i : cellActivate)
     {
         for (auto &&i : GetVoisins(i))
         {
-            caseAverifier.insert(i);
+            cellToCheck.insert(i);
         }
-        
-
     }
-    
 }
 
 int nbrVoisin = 0;
 
-std::array<int, CELL_NUMBER_HORIZONTAL * CELL_NUMBER_VERTICAL> nouveauxNbrVoisins; 
-void VerifVoisins(float dt)
+std::array<int, CELL_NUMBER_HORIZONTAL * CELL_NUMBER_VERTICAL> nouveauxNbrVoisins;
+void CheckNeighbours(float dt)
 {
-    ConstructionCaseAVerif();
-for (auto &&i : caseAverifier)
-{
-     nbrVoisin = 0;
+    BuildCheckedCellArray();
+    for (auto &&i : cellToCheck)
+    {
+        nbrVoisin = 0;
         for (auto const &voisins : GetVoisins(i))
         {
 
-            if (voisins >= 0 && voisins < grille.size())
+            if (voisins >= 0 && voisins < grid.size())
             {
-                if (grille[voisins].EstActiver) // si le voisin est activer cela ajoute 1 au nbr de voisin.
+                if (grid[voisins].isActivate) // si le voisin est activer cela ajoute 1 au nbr de voisin.
                     nbrVoisin++;
             }
         }
         nouveauxNbrVoisins[i] = nbrVoisin;
-}
+    }
 
+    for (auto &&i : cellToCheck)
+    {
+        grid[i].numberOfNeighbours = nouveauxNbrVoisins[i];
 
-    for (auto &&i : caseAverifier)
-{
-grille[i].nombreVoisin = nouveauxNbrVoisins[i];
-
-                if (grille[i].nombreVoisin == 3)
-            ActiverCase(i);
-        else if (grille[i].EstActiver && grille[i].nombreVoisin == 2)
-            ActiverCase(i);
+        if (grid[i].numberOfNeighbours == 3)
+            ActivateCell(i);
+        else if (grid[i].isActivate && grid[i].numberOfNeighbours == 2)
+            ActivateCell(i);
         else
-            DesactiverCase(i);
+            DeactivateCell(i);
+    }
 }
-
-
-}
-
 
 // note profilleur : premiére ereur fais de linitiation de variable dans verif voisin ensuite c'est find dans la map qui est un peu long
 // une fois la map corriger on passe en x4 et la map nouveauxNbrVoisins prend trop de temp
 // aprés la map nouveauxNbrVoisins j'ai opti get voisin pour pas que sa allocator un vector a chaque fois je l'ai passer sous array avec instanciation avant
 // avec un fois 8 on est a 30 fps alors que avec le x 2 on est a 60 on sent que c'est lent mais il y a pas de ralentissement et verifvoisin fais 0.08
-// le probléme est que l'on déssine tous les cas 3 milion de case alors qu'il faudrait déssiner que ceux visible a la caméra
-// j'ai donc limiter les dessin au case présent a la caméra
-// ensuite ne passant a x32 j'ai eu des probléme avec VérifVoisin car sa fesais trop de case
-// donc j'ai limiter les nombre de case a vérif uniquement avec ceux activer et leur voisin
-// une foi le x256 test la grille est trop grand pour etre stocker dans l'array grille
+// le probléme est que l'on déssine tous les cas 3 milion de Cell alors qu'il faudrait déssiner que ceux visible a la caméra
+// j'ai donc limiter les dessin au Cell présent a la caméra
+// ensuite ne passant a x32 j'ai eu des probléme avec VérifVoisin car sa fesais trop de Cell
+// donc j'ai limiter les nombre de Cell a vérif uniquement avec ceux activer et leur voisin
+// une foi le x256 test la grid est trop grand pour etre stocker dans l'array grid
 
 // int GetScreenWidth(void);                                   // Get current screen width
 // int GetScreenHeight(void);                                  // Get current screen height
