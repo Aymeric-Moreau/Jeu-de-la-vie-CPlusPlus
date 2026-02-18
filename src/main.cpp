@@ -15,9 +15,9 @@ constexpr int CELL_SIZE = 10;                   // Taille d'une case
 constexpr int CELL_SPACING = 1;                 // Espace entre les cases
 constexpr int CELL_NUMBER_HORIZONTAL = 75 * 128; // dabors sans multiplicateur puis 2 puis quand 2 valide alors 4 ensuite 8 et 16 puis 32 pui 64 puis 128 puis 256
 constexpr int CELL_NUMBER_VERTICAL = 45 * 128;
-constexpr Color background = BLUE;
-constexpr int screenWidth = 1540;
-constexpr int screenHeight = 990;
+constexpr Color BACKGROUND = BLUE; //
+constexpr int SCREENWIDTH = 1540;
+constexpr int SCREENHEIGHT = 990;
 using Coords = std::pair<int, int>;
 // struct perso pour les infos de chaque Case de la grille
 struct Case
@@ -28,8 +28,6 @@ struct Case
     int nombreVoisin{0};
 };
 
-//     int screenWidth = GetScreenWidth();
-// int screenHeight = GetScreenHeight();
 
 Vector2 topLeftWorld;
 Vector2 topRightWorld;
@@ -40,9 +38,8 @@ std::vector<int> caseAVerif;
 std::unordered_set<int> caseAverifier;
 std::unordered_set<int> caseActiver;
 
-// On utilise une clé grille (x, y) entière
 
-// std::map<Coords, Case> mapGrille;
+// array stockant la grille compléte
 std::array<Case, CELL_NUMBER_HORIZONTAL * CELL_NUMBER_VERTICAL> grille;
 
 // pré-déclarations de mes fonctions
@@ -62,13 +59,10 @@ Camera2D camera;
 int main()
 {
 
-    InitWindow(screenWidth, screenHeight, "Raylib jeu de la vie");
+    InitWindow(SCREENWIDTH, SCREENHEIGHT, "Raylib jeu de la vie");
     SetTargetFPS(60);
 
     int ActualIndexArray = 0;
-    // for (int gy = -(CELL_NUMBER_VERTICAL / 2); gy < CELL_NUMBER_VERTICAL / 2; gy++)
-    //     {
-    // for (int gx = -(CELL_NUMBER_HORIZONTAL/2); gx < CELL_NUMBER_HORIZONTAL/2; gx++)
     // Initialisation de la grille
     for (int gy = 0; gy < CELL_NUMBER_VERTICAL; gy++)
     {
@@ -90,7 +84,6 @@ int main()
     bool timerActive{true};
 
     // spawn de la ball qui nous servira de "character" invisible pour qu'on puisse déplacer la caméra
-    // Vector2 ballPosition = {(float)screenWidth / 2, (float)screenHeight / 2};
     float gridWidth = CELL_NUMBER_HORIZONTAL * (CELL_SIZE + CELL_SPACING);
     float gridHeight = CELL_NUMBER_VERTICAL * (CELL_SIZE + CELL_SPACING);
     Vector2 gridCenter = {gridWidth / 2.0f, gridHeight / 2.0f};
@@ -149,24 +142,15 @@ int main()
 
         // Mise à jour de la caméra pour qu’elle suive la boule
         camera.target = ballPosition;
-        camera.offset = {(float)screenWidth / 2, (float)screenHeight / 2};
+        camera.offset = {(float)SCREENWIDTH / 2, (float)SCREENHEIGHT / 2};
 
         UpdateViewportCoord();
         GetAllCaseBetweenMinMaxCo(topLeftWorld, bottomRightWorld);
 
-        //             int screenWidth = GetScreenWidth();
-        // int screenHeight = GetScreenHeight();
 
-        // Dessin de la grille
-        // for (auto &val : grille)
-        // {
-        //     DrawRectangle(val.Coordoner.x, val.Coordoner.y,
-        //                   CELL_SIZE, CELL_SIZE,
-        //                   val.EstActiver ? BLACK : WHITE);
-        // }
 
         BeginDrawing();
-        ClearBackground(background);
+        ClearBackground(BACKGROUND);
 
         BeginMode2D(camera); // ----- Caméra activée -----
 
@@ -179,7 +163,7 @@ int main()
         EndMode2D(); // ----- Caméra désactivée -----
 
         // Clic souris  IsMouseButtonDown(int button)
-        // if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
         {
             // Conversion coordonnées souris -> coordonnées caméra
@@ -192,7 +176,7 @@ int main()
 
             if (index >= 0 && index < grille.size())
             {
-                // grille[index].EstActiver = !grille[index].EstActiver;
+                
                 if (grille[index].EstActiver)
                 {
                     DesactiverCase(index);
@@ -228,9 +212,9 @@ int FindCaseWithCoo(Vector2 mousePos)
 void UpdateViewportCoord()
 {
     topLeftWorld = GetScreenToWorld2D((Vector2){0, 0}, camera);
-    topRightWorld = GetScreenToWorld2D((Vector2){screenWidth, 0}, camera);
-    bottomLeftWorld = GetScreenToWorld2D((Vector2){0, screenHeight}, camera);
-    bottomRightWorld = GetScreenToWorld2D((Vector2){screenWidth, screenHeight}, camera);
+    topRightWorld = GetScreenToWorld2D((Vector2){SCREENWIDTH, 0}, camera);
+    bottomLeftWorld = GetScreenToWorld2D((Vector2){0, SCREENHEIGHT}, camera);
+    bottomRightWorld = GetScreenToWorld2D((Vector2){SCREENWIDTH, SCREENHEIGHT}, camera);
 }
 
 
@@ -264,13 +248,6 @@ std::vector<Case> GetAllCaseBetweenMinMaxCo(Vector2 CoMin, Vector2 CoMax)
     return caseVisible;
 }
 
-//     for (int gy = CoMin.y; gy < CoMax.y; gy++)
-//     {
-// for (int gx = CoMin.x; gx < CoMax.x; gx++)
-// {
-
-// }
-//     }
 
 std::array<int, 8> voisins;
 std::array<int, 8> getVoisins(int c)
@@ -323,17 +300,7 @@ void DesactiverCase(int index)
 void AjouterAuCaseAVerif(int c){
 
     caseActiver.insert(c);
-    
-    
 
-//     if (std::find(caseAVerif.begin(), caseAVerif.end(), c) != caseAVerif.end())
-// {
-//     // target est dans le vector
-// }else{
-//     // target est pas dans le vector
-//     caseAVerif.push_back(c);
-// }
-    
 }
 
 void SupprimerAuCaseAVerif(int c){
@@ -376,20 +343,10 @@ for (auto &&i : caseAverifier)
 }
 
 
-    // for (size_t i = 0; i < caseAverifier.size(); i++)
-    // {
-       
-    // }
-
     for (auto &&i : caseAverifier)
 {
 grille[i].nombreVoisin = nouveauxNbrVoisins[i];
-        // if (grille[i].nombreVoisin == 3)
-        //     grille[i].EstActiver = true;
-        // else if (grille[i].EstActiver && grille[i].nombreVoisin == 2)
-        //     grille[i].EstActiver = true;
-        // else
-        //     grille[i].EstActiver = false;
+
                 if (grille[i].nombreVoisin == 3)
             ActiverCase(i);
         else if (grille[i].EstActiver && grille[i].nombreVoisin == 2)
@@ -401,60 +358,6 @@ grille[i].nombreVoisin = nouveauxNbrVoisins[i];
 
 }
 
-    // for (size_t i = 0; i < caseAVerif.size(); i++)
-    // {
-
-    //     grille[caseAVerif[i]].nombreVoisin = nouveauxNbrVoisins[caseAVerif[i]];
-    //     // if (grille[i].nombreVoisin == 3)
-    //     //     grille[i].EstActiver = true;
-    //     // else if (grille[i].EstActiver && grille[i].nombreVoisin == 2)
-    //     //     grille[i].EstActiver = true;
-    //     // else
-    //     //     grille[i].EstActiver = false;
-    //             if (grille[caseAVerif[i]].nombreVoisin == 3)
-    //         ActiverCase(caseAVerif[i]);
-    //     else if (grille[caseAVerif[i]].EstActiver && grille[caseAVerif[i]].nombreVoisin == 2)
-    //         ActiverCase(caseAVerif[i]);
-    //     else
-    //         DesactiverCase(caseAVerif[i]);
-    // }
-
-// void verifVoisinsOld(float dt)
-// {
-
-//     for (size_t i = 0; i < grille.size(); i++)
-//     {
-//         nbrVoisin = 0;
-//         for (auto const &voisins : getVoisins(i))
-//         {
-
-//             if (voisins >= 0 && voisins < grille.size())
-//             {
-//                 if (grille[voisins].EstActiver) // si le voisin est activer cela ajoute 1 au nbr de voisin.
-//                     nbrVoisin++;
-//             }
-//         }
-//         nouveauxNbrVoisins[i] = nbrVoisin;
-//     }
-
-//     for (size_t i = 0; i < grille.size(); i++)
-//     {
-
-//         grille[i].nombreVoisin = nouveauxNbrVoisins[i];
-//         // if (grille[i].nombreVoisin == 3)
-//         //     grille[i].EstActiver = true;
-//         // else if (grille[i].EstActiver && grille[i].nombreVoisin == 2)
-//         //     grille[i].EstActiver = true;
-//         // else
-//         //     grille[i].EstActiver = false;
-//                 if (grille[i].nombreVoisin == 3)
-//             ActiverCase(i);
-//         else if (grille[i].EstActiver && grille[i].nombreVoisin == 2)
-//             ActiverCase(i);
-//         else
-//             DesactiverCase(i);
-//     }
-// }
 
 // note profilleur : premiére ereur fais de linitiation de variable dans verif voisin ensuite c'est find dans la map qui est un peu long
 // une fois la map corriger on passe en x4 et la map nouveauxNbrVoisins prend trop de temp
@@ -464,6 +367,7 @@ grille[i].nombreVoisin = nouveauxNbrVoisins[i];
 // j'ai donc limiter les dessin au case présent a la caméra
 // ensuite ne passant a x32 j'ai eu des probléme avec VérifVoisin car sa fesais trop de case
 // donc j'ai limiter les nombre de case a vérif uniquement avec ceux activer et leur voisin
+// une foi le x256 test la grille est trop grand pour etre stocker dans l'array grille
 
 // int GetScreenWidth(void);                                   // Get current screen width
 // int GetScreenHeight(void);                                  // Get current screen height
