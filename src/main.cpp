@@ -13,7 +13,7 @@
 // --- Paramètres globaux ---
 constexpr int CELL_SIZE = 10;                   // Taille d'une case
 constexpr int CELL_SPACING = 1;                 // Espace entre les cases
-constexpr int CELL_NUMBER_HORIZONTAL = 75 * 128; // dabors sans multiplicateur puis 2 puis quand 2 valide alors 4 ensuite 8 et 16 puis 32
+constexpr int CELL_NUMBER_HORIZONTAL = 75 * 128; // dabors sans multiplicateur puis 2 puis quand 2 valide alors 4 ensuite 8 et 16 puis 32 pui 64 puis 128 puis 256
 constexpr int CELL_NUMBER_VERTICAL = 45 * 128;
 constexpr Color background = BLUE;
 constexpr int screenWidth = 1540;
@@ -38,6 +38,7 @@ Vector2 bottomRightWorld;
 std::vector<Case> caseVisible;
 std::vector<int> caseAVerif;
 std::unordered_set<int> caseAverifier;
+std::unordered_set<int> caseActiver;
 
 // On utilise une clé grille (x, y) entière
 
@@ -54,6 +55,8 @@ void verifVoisins(float dt);
 void DesactiverCase(int index);
 void ActiverCase(int index);
 void AjouterAuCaseAVerif(int c);
+void SupprimerAuCaseAVerif(int c);
+void ConstructionCaseAVerif();
 Camera2D camera;
 
 int main()
@@ -313,18 +316,41 @@ void DesactiverCase(int index)
     if (index >= 0 && index < grille.size())
     {
         grille[index].EstActiver = false;
+        SupprimerAuCaseAVerif(index);
     }
 }
-
+// caseAverifier
 void AjouterAuCaseAVerif(int c){
 
-    if (std::find(caseAVerif.begin(), caseAVerif.end(), c) != caseAVerif.end())
-{
-    // target est dans le vector
-}else{
-    // target est pas dans le vector
-    caseAVerif.push_back(c);
+    caseActiver.insert(c);
+    
+    
+
+//     if (std::find(caseAVerif.begin(), caseAVerif.end(), c) != caseAVerif.end())
+// {
+//     // target est dans le vector
+// }else{
+//     // target est pas dans le vector
+//     caseAVerif.push_back(c);
+// }
+    
 }
+
+void SupprimerAuCaseAVerif(int c){
+    caseActiver.erase(c);
+}
+
+void ConstructionCaseAVerif(){
+    caseAverifier = caseActiver;
+    for (auto &&i : caseActiver)
+    {
+        for (auto &&i : getVoisins(i))
+        {
+            caseAverifier.insert(i);
+        }
+        
+
+    }
     
 }
 
@@ -333,11 +359,11 @@ int nbrVoisin = 0;
 std::array<int, CELL_NUMBER_HORIZONTAL * CELL_NUMBER_VERTICAL> nouveauxNbrVoisins; 
 void verifVoisins(float dt)
 {
-
-    for (size_t i = 0; i < caseAVerif.size(); i++)
-    {
-        nbrVoisin = 0;
-        for (auto const &voisins : getVoisins(caseAVerif[i]))
+    ConstructionCaseAVerif();
+for (auto &&i : caseAverifier)
+{
+     nbrVoisin = 0;
+        for (auto const &voisins : getVoisins(i))
         {
 
             if (voisins >= 0 && voisins < grille.size())
@@ -346,27 +372,52 @@ void verifVoisins(float dt)
                     nbrVoisin++;
             }
         }
-        nouveauxNbrVoisins[caseAVerif[i]] = nbrVoisin;
-    }
+        nouveauxNbrVoisins[i] = nbrVoisin;
+}
 
-    for (size_t i = 0; i < caseAVerif.size(); i++)
-    {
 
-        grille[caseAVerif[i]].nombreVoisin = nouveauxNbrVoisins[caseAVerif[i]];
+    // for (size_t i = 0; i < caseAverifier.size(); i++)
+    // {
+       
+    // }
+
+    for (auto &&i : caseAverifier)
+{
+grille[i].nombreVoisin = nouveauxNbrVoisins[i];
         // if (grille[i].nombreVoisin == 3)
         //     grille[i].EstActiver = true;
         // else if (grille[i].EstActiver && grille[i].nombreVoisin == 2)
         //     grille[i].EstActiver = true;
         // else
         //     grille[i].EstActiver = false;
-                if (grille[caseAVerif[i]].nombreVoisin == 3)
-            ActiverCase(caseAVerif[i]);
-        else if (grille[caseAVerif[i]].EstActiver && grille[caseAVerif[i]].nombreVoisin == 2)
-            ActiverCase(caseAVerif[i]);
+                if (grille[i].nombreVoisin == 3)
+            ActiverCase(i);
+        else if (grille[i].EstActiver && grille[i].nombreVoisin == 2)
+            ActiverCase(i);
         else
-            DesactiverCase(caseAVerif[i]);
-    }
+            DesactiverCase(i);
 }
+
+
+}
+
+    // for (size_t i = 0; i < caseAVerif.size(); i++)
+    // {
+
+    //     grille[caseAVerif[i]].nombreVoisin = nouveauxNbrVoisins[caseAVerif[i]];
+    //     // if (grille[i].nombreVoisin == 3)
+    //     //     grille[i].EstActiver = true;
+    //     // else if (grille[i].EstActiver && grille[i].nombreVoisin == 2)
+    //     //     grille[i].EstActiver = true;
+    //     // else
+    //     //     grille[i].EstActiver = false;
+    //             if (grille[caseAVerif[i]].nombreVoisin == 3)
+    //         ActiverCase(caseAVerif[i]);
+    //     else if (grille[caseAVerif[i]].EstActiver && grille[caseAVerif[i]].nombreVoisin == 2)
+    //         ActiverCase(caseAVerif[i]);
+    //     else
+    //         DesactiverCase(caseAVerif[i]);
+    // }
 
 // void verifVoisinsOld(float dt)
 // {
@@ -412,7 +463,7 @@ void verifVoisins(float dt)
 // le probléme est que l'on déssine tous les cas 3 milion de case alors qu'il faudrait déssiner que ceux visible a la caméra
 // j'ai donc limiter les dessin au case présent a la caméra
 // ensuite ne passant a x32 j'ai eu des probléme avec VérifVoisin car sa fesais trop de case
-// donc j'ai limiter les nombre de case a vérif uniquement avec ceux intéragie et leur voisinx2
+// donc j'ai limiter les nombre de case a vérif uniquement avec ceux activer et leur voisin
 
 // int GetScreenWidth(void);                                   // Get current screen width
 // int GetScreenHeight(void);                                  // Get current screen height
